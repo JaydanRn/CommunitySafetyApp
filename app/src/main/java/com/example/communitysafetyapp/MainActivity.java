@@ -1,6 +1,8 @@
 package com.example.communitysafetyapp;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,5 +22,26 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        Button buttonViewChecks = findViewById(R.id.btnViewChecks);
+      buttonViewChecks.setOnClickListener(v ->{
+            Intent i = new Intent(
+                    MainActivity.this,
+                    ActiveChecksActivity.class
+            );
+            startActivity(i);
+        });
+
+        Button buttonManagePeople = findViewById(R.id.btnManagePeople);
+        buttonManagePeople.setOnClickListener(v ->{
+            Intent i = new Intent(
+                    MainActivity.this,
+                    PeopleActivity.class
+            );
+            startActivity(i);
+        });
+
+        Button buttonExit = findViewById(R.id.btnExit);
+        //buttonViewChecks.setOnClickListener(v -> finishAffinity);
     }
 }
