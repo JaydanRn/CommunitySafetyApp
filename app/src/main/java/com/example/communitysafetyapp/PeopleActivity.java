@@ -1,6 +1,5 @@
 package com.example.communitysafetyapp;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,24 +17,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.ArrayList;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 public class PeopleActivity extends AppCompatActivity {
 
     private static final String TAG = "PeopleActivity";
-    private static final String CONTACTS_FILE = "contacts.dat";
-    private static final String SETTINGS_FILE = "settings.dat";
+
     private TextView tvEscalationContact, tvContactsEmpty;
     private EditText etMyNumber;
     private Button btnPickEscalation, btnSaveYou;
@@ -71,7 +61,7 @@ public class PeopleActivity extends AppCompatActivity {
         btnSaveYou.setOnClickListener(v -> saveYou());
         btnPickEscalation.setOnClickListener(v -> pickEscalationContact());
 
-        fabAddContact.setOnClickListener(v ->{
+        fabAddContact.setOnClickListener(v -> {
             Intent i = new Intent(
                     PeopleActivity.this,
                     ItemContactActivity.class
@@ -79,7 +69,7 @@ public class PeopleActivity extends AppCompatActivity {
             startActivity(i);
         });
 
-        lvContacts.setOnItemClickListener(((parent, view, position, id) -> {
+        lvContacts.setOnItemClickListener((parent, view, position, id) -> {
             Contact c = contacts.get(position);
             Intent i = new Intent(
                     PeopleActivity.this,
@@ -89,30 +79,30 @@ public class PeopleActivity extends AppCompatActivity {
             i.putExtra("phone", c.phone);
             i.putExtra("group", c.group);
             startActivity(i);
-        }));
+        });
 
         fabAddContact.setOnLongClickListener(v -> {
             StartCheckDialogFragment.newInstance().show(getSupportFragmentManager(), "startCheck");
             return true;
         });
     }
+
     @Override
-    protected void onResume(){
+    protected void onResume() {
         super.onResume();
         loadSettings();
         loadContacts();
     }
 
-    private void loadSettings(){
-        try (FileInputStream fis = openFileInput(SETTINGS_FILE);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-
-            settings = (Settings) ois.readObject();
+    private void loadSettings() {
+        try {
+            settings = FileHelper.loadSettings(this);
             Log.d(TAG, "Settings loaded: " + settings.myNumber);
 
         } catch (Exception e) {
-            Log.d(TAG, "No settings file yet (first run) — using defaults");
-            settings = new Settings();
+            Log.e(TAG, "Could not load settings", e);
+            Toast.makeText(this, "Could not load settings", Toast.LENGTH_LONG).show();
+            return;
         }
 
         etMyNumber.setText(settings.myNumber);
@@ -124,23 +114,23 @@ public class PeopleActivity extends AppCompatActivity {
         }
     }
 
-    private void loadContacts(){
-        contacts.clear();
-        try (FileInputStream fis = openFileInput(CONTACTS_FILE);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
+    private void loadContacts() {
+        try {
+            ArrayList<Contact> loadedContacts = FileHelper.loadContacts(this);
 
-            while (true) {
-                try {
-                    Contact c = (Contact) ois.readObject();
-                    contacts.add(c);
-                } catch (Exception eof) {
-                    break;
-                }
+            for (Contact c : contacts) {
+                Log.d("FileDebug", "Contact: " + c.name + " | " + c.phone);
             }
+
+            contacts.clear();
+            contacts.addAll(loadedContacts);
+
             Log.d(TAG, "Loaded " + contacts.size() + " contacts");
 
         } catch (Exception e) {
-            Log.d(TAG, "No contacts file yet — starting empty");
+            Log.e(TAG, "Could not load contacts", e);
+            Toast.makeText(this, "Could not load contacts", Toast.LENGTH_LONG).show();
+            return;
         }
 
         adapter.notifyDataSetChanged();
@@ -152,24 +142,23 @@ public class PeopleActivity extends AppCompatActivity {
             tvContactsEmpty.setVisibility(View.GONE);
             lvContacts.setVisibility(View.VISIBLE);
         }
+
     }
 
-    private void saveSettings(){
-        try (FileOutputStream fos = openFileOutput(SETTINGS_FILE, Context.MODE_PRIVATE);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-
-            oos.writeObject(settings);
+    private boolean saveSettings() {
+        if (FileHelper.saveSettings(this, settings)) {
             Log.d(TAG, "Settings saved");
-
-        } catch (Exception e) {
-            Log.d(TAG, "Settings save failed: " + e.getMessage(), e);
-            Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            return true;
+        } else {
+            Log.e(TAG, "Could not save settings");
+            Toast.makeText(this, "Could not save settings", Toast.LENGTH_LONG).show();
+            return false;
         }
     }
 
-    private void saveYou(){
+    private void saveYou() {
         String num = "";
-        if (etMyNumber.getText() != null){
+        if (etMyNumber.getText() != null) {
             num = etMyNumber.getText().toString().trim();
         }
         if (num.isEmpty()) {
@@ -178,11 +167,12 @@ public class PeopleActivity extends AppCompatActivity {
         }
 
         settings.myNumber = num;
-        saveSettings();
-        Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+        if (saveSettings()) {
+            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private void pickEscalationContact(){
+    private void pickEscalationContact() {
         if (contacts.isEmpty()) {
             Toast.makeText(this, "Add a contact first", Toast.LENGTH_SHORT).show();
             return;
@@ -199,8 +189,9 @@ public class PeopleActivity extends AppCompatActivity {
                     Contact c = contacts.get(which);
                     settings.escalationContactName = c.name;
                     settings.escalationContactPhone = c.phone;
-                    saveSettings();
-                    tvEscalationContact.setText("Escalation Contact: " + c.name + " (" + c.phone + ")");
+                    if (saveSettings()) {
+                        tvEscalationContact.setText("Escalation Contact: " + c.name + " (" + c.phone + ")");
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

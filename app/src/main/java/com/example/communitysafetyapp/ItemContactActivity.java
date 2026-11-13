@@ -19,17 +19,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 public class ItemContactActivity extends AppCompatActivity {
 
     private static final String TAG = "ItemContactActivity";
-    private static final String CONTACTS_FILE = "contacts.dat";
-
     private TextView tvFormTitle;
     private EditText etName, etPhone;
     private Spinner spinnerGroup;
@@ -84,6 +78,7 @@ public class ItemContactActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> finish());
     }
 
+
     private void saveContact() {
         String name = "";
         if (etName.getText() != null) {
@@ -106,21 +101,31 @@ public class ItemContactActivity extends AppCompatActivity {
             return;
         }
 
-        ArrayList<Contact> contacts = new ArrayList<>();
-        try (FileInputStream fis = openFileInput(CONTACTS_FILE);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
+        ArrayList<Contact> contacts;
 
-            while (true) {
-                try {
-                    contacts.add((Contact) ois.readObject());
-                } catch (Exception eof) {
-                    break;
-                }
-            }
+        try {
+            contacts = FileHelper.loadContacts(this);
             Log.d(TAG, "Loaded " + contacts.size() + " contacts");
 
         } catch (Exception e) {
-            Log.d(TAG, "No contacts file yet - creating new one");
+            Log.e(TAG, "Could not load contacts", e);
+            Toast.makeText(this, "Could not load contacts", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Check whether another contact already has this phone number
+        for (Contact c : contacts) {
+
+            if (PhoneHelper.phoneNumbersMatch(phone, c.phone)) {
+
+                // Ignore the contact currently being edited
+                if (isEditMode && c.phone.equals(originalPhone)) {
+                    continue;
+                }
+
+                etPhone.setError("A contact with this number already exists");
+                return;
+            }
         }
 
         if (isEditMode) {
@@ -145,19 +150,14 @@ public class ItemContactActivity extends AppCompatActivity {
             Log.d(TAG, "Added new contact: " + name);
         }
 
-        try (FileOutputStream fos = openFileOutput(CONTACTS_FILE, Context.MODE_PRIVATE);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-
-            for (Contact c : contacts) {
-                oos.writeObject(c);
-            }
+        if (FileHelper.saveContacts(this, contacts)) {
             Log.d(TAG, "Saved " + contacts.size() + " contacts");
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
             finish();
 
-        } catch (Exception e) {
-            Log.d(TAG, "Save failed: " + e.getMessage(), e);
-            Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        } else {
+            Log.e(TAG, "Could not save contacts");
+            Toast.makeText(this, "Save failed", Toast.LENGTH_LONG).show();
         }
     }
 }

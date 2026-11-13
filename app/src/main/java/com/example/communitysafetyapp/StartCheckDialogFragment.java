@@ -21,10 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,9 +29,6 @@ import java.util.Locale;
 public class StartCheckDialogFragment extends DialogFragment {
 
     private static final String TAG = "StartCheckDialog";
-    private static final String CONTACTS_FILE = "contacts.dat";
-    private static final String CHECKS_FILE   = "checks.dat";
-    private static final String SETTINGS_FILE = "settings.dat";
     private static final int SMS_PERMISSION_REQUEST = 100;
 
     // Argument keys
@@ -135,6 +128,21 @@ public class StartCheckDialogFragment extends DialogFragment {
     }
 
     private void onStartClicked() {
+        if (requireContext().checkSelfPermission(Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED
+                ||
+                requireContext().checkSelfPermission(Manifest.permission.RECEIVE_SMS)
+                        != PackageManager.PERMISSION_GRANTED) {
+
+            requestPermissions(
+                    new String[]{
+                            Manifest.permission.SEND_SMS,
+                            Manifest.permission.RECEIVE_SMS
+                    },
+                    SMS_PERMISSION_REQUEST
+            );
+            return;
+        }
         if (selectedPhone == null) {
             int pos = spinnerContact.getSelectedItemPosition();
             if (pos < 0 || pos >= contacts.size()) {
@@ -150,6 +158,22 @@ public class StartCheckDialogFragment extends DialogFragment {
             reason = "SAFETY_CONCERN";
         } else {
             reason = "CHECK_IN";
+        }
+
+        // Ensure there are no open checks for this contact first
+        try {
+            if (hasOpenCheck(selectedPhone)) {
+                Toast.makeText(requireContext(),
+                        "This contact already has an open check-in. Close it before starting another.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Could not check for existing check-ins", e);
+            Toast.makeText(requireContext(),
+                    "Could not verify existing check-ins",
+                    Toast.LENGTH_LONG).show();
+            return;
         }
 
         int windowMinutes = parseWindowMinutes(spinnerWindow.getSelectedItem().toString());
@@ -172,6 +196,11 @@ public class StartCheckDialogFragment extends DialogFragment {
         String msg = buildMessage(check);
         sendSms(selectedPhone, msg);
 
+        // Refresh and display the checks
+        if (getActivity() instanceof ActiveChecksActivity) {
+            ((ActiveChecksActivity) getActivity()).refreshChecks();
+        }
+
         Toast.makeText(requireContext(), "Check started for " + selectedName, Toast.LENGTH_SHORT).show();
         dismiss();
     }
@@ -188,67 +217,49 @@ public class StartCheckDialogFragment extends DialogFragment {
     }
 
     private void loadSettings() {
-        try (FileInputStream fis = requireContext().openFileInput(SETTINGS_FILE);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-            settings = (Settings) ois.readObject();
+        try {
+            settings = FileHelper.loadSettings(requireContext());
+
         } catch (Exception e) {
-            Log.d(TAG, "No settings file - using defaults");
+            Log.e(TAG, "Could not load settings", e);
             settings = new Settings();
         }
     }
 
     private void loadContacts() {
-        contacts.clear();
-        try (FileInputStream fis = requireContext().openFileInput(CONTACTS_FILE);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-            while (true) {
-                try {
-                    contacts.add((Contact) ois.readObject());
-                } catch (Exception eof) {
-                    break;
-                }
-            }
+        try {
+            ArrayList<Contact> loadedContacts = FileHelper.loadContacts(requireContext());
+
+            contacts.clear();
+            contacts.addAll(loadedContacts);
+
         } catch (Exception e) {
-            Log.d(TAG, "No contacts file yet");
+            Log.e(TAG, "Could not load contacts", e);
         }
     }
-
     private boolean saveCheck(Check check) {
-        ArrayList<Check> checks = new ArrayList<>();
-        try (FileInputStream fis = requireContext().openFileInput(CHECKS_FILE);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
-            while (true) {
-                try {
-                    checks.add((Check) ois.readObject());
-                } catch (Exception eof) {
-                    break;
-                }
+        try {
+            ArrayList<Check> checks = FileHelper.loadChecks(requireContext());
+            checks.add(check);
+
+            if (FileHelper.saveChecks(requireContext(), checks)) {
+                Log.d(TAG, "Saved check: " + check.id);
+                return true;
             }
+
         } catch (Exception e) {
-            Log.d(TAG, "No checks file yet - creating");
+            Log.e(TAG, "Could not save check", e);
         }
 
-        checks.add(check);
-
-        try (FileOutputStream fos = requireContext().openFileOutput(CHECKS_FILE, Context.MODE_PRIVATE);
-             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            for (Check c : checks) {
-                oos.writeObject(c);
-            }
-            Log.d(TAG, "Saved check: " + check.id);
-            return true;
-        } catch (Exception e) {
-            Log.d(TAG, "Save check failed: " + e.getMessage(), e);
-            return false;
-        }
+        return false;
     }
 
     private void sendSms(String phone, String message) {
         if (requireContext().checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             pendingSend = true;
             requestPermissions(new String[]{Manifest.permission.SEND_SMS}, SMS_PERMISSION_REQUEST);
-            pendingPhone = phone;
-            pendingMessage = message;
+//            pendingPhone = phone;
+//            pendingMessage = message;
             return;
         }
         doSend(phone, message);
@@ -291,15 +302,14 @@ public class StartCheckDialogFragment extends DialogFragment {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == SMS_PERMISSION_REQUEST) {
-            if (grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (pendingSend && pendingPhone != null && pendingMessage != null) {
-                    doSend(pendingPhone, pendingMessage);
-                    pendingSend = false;
-                }
+            if (requireContext().checkSelfPermission(Manifest.permission.SEND_SMS)
+                    == PackageManager.PERMISSION_GRANTED
+                    && requireContext().checkSelfPermission(Manifest.permission.RECEIVE_SMS)
+                    == PackageManager.PERMISSION_GRANTED) {
+                onStartClicked();
             } else {
                 Toast.makeText(requireContext(),
-                        "SMS permission denied - check saved but SMS not sent",
+                        "SMS permissions required",
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -315,5 +325,19 @@ public class StartCheckDialogFragment extends DialogFragment {
         } catch (Exception e) {
             return 15;
         }
+    }
+
+    //Used to prevent simultaneous check-ins for the same contact
+    private boolean hasOpenCheck(String phoneNumber) throws Exception {
+        ArrayList<Check> checks = FileHelper.loadChecks(requireContext());
+
+        for (Check check : checks) {
+            if (PhoneHelper.phoneNumbersMatch(phoneNumber, check.contactPhone)
+                    && !Check.STATUS_CLOSED.equals(check.status)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
