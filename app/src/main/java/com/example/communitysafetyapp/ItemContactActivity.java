@@ -8,16 +8,15 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import android.content.Context;
-import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.View;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 
@@ -28,7 +27,7 @@ public class ItemContactActivity extends AppCompatActivity {
     private EditText etName, etPhone;
     private Spinner spinnerGroup;
     private Button btnSave, btnCancel;
-
+    private Button btnDelete;
     private boolean isEditMode = false;
     private String originalPhone = null;
 
@@ -49,6 +48,7 @@ public class ItemContactActivity extends AppCompatActivity {
         spinnerGroup = findViewById(R.id.spinnerGroup);
         btnSave      = findViewById(R.id.btnSave);
         btnCancel    = findViewById(R.id.btnCancel);
+        btnDelete    = findViewById(R.id.btnDelete);
 
         ArrayAdapter<CharSequence> groupAdapter = ArrayAdapter.createFromResource(
                 this,
@@ -67,6 +67,8 @@ public class ItemContactActivity extends AppCompatActivity {
             etName.setText(nameExtra);
             etPhone.setText(originalPhone);
 
+            btnDelete.setVisibility(View.VISIBLE);
+
             String groupExtra = getIntent().getStringExtra("group");
             if (groupExtra != null) {
                 int pos = groupAdapter.getPosition(groupExtra);
@@ -76,6 +78,18 @@ public class ItemContactActivity extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> saveContact());
         btnCancel.setOnClickListener(v -> finish());
+        btnDelete.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Delete Contact")
+                    .setMessage("Are you sure you want to delete this contact?")
+                    .setPositiveButton("Delete", (dialog, which) -> deleteContact())
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+
+        Button btnBack = findViewById(R.id.btnBack);
+
+        btnBack.setOnClickListener(v -> finish());
     }
 
 
@@ -105,7 +119,6 @@ public class ItemContactActivity extends AppCompatActivity {
 
         try {
             contacts = FileHelper.loadContacts(this);
-            Log.d(TAG, "Loaded " + contacts.size() + " contacts");
 
         } catch (Exception e) {
             Log.e(TAG, "Could not load contacts", e);
@@ -137,7 +150,6 @@ public class ItemContactActivity extends AppCompatActivity {
                     c.phone = phone;
                     c.group = group;
                     found = true;
-                    Log.d(TAG, "Updated contact at index " + i);
                     break;
                 }
             }
@@ -147,17 +159,45 @@ public class ItemContactActivity extends AppCompatActivity {
             }
         } else {
             contacts.add(new Contact(name, phone, group, true));
-            Log.d(TAG, "Added new contact: " + name);
         }
 
         if (FileHelper.saveContacts(this, contacts)) {
-            Log.d(TAG, "Saved " + contacts.size() + " contacts");
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
             finish();
 
         } else {
-            Log.e(TAG, "Could not save contacts");
             Toast.makeText(this, "Save failed", Toast.LENGTH_LONG).show();
+        }
+    }
+    private void deleteContact() {
+        try {
+            ArrayList<Contact> contacts = FileHelper.loadContacts(this);
+
+            boolean removed = false;
+
+            for (int i = 0; i < contacts.size(); i++) {
+                if (contacts.get(i).phone.equals(originalPhone)) {
+                    contacts.remove(i);
+                    removed = true;
+                    break;
+                }
+            }
+
+            if (!removed) {
+                Toast.makeText(this, "Contact not found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (FileHelper.saveContacts(this, contacts)) {
+                Toast.makeText(this, "Contact deleted", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Could not delete contact", Toast.LENGTH_SHORT).show();
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Could not delete contact", e);
+            Toast.makeText(this, "Could not delete contact", Toast.LENGTH_SHORT).show();
         }
     }
 }

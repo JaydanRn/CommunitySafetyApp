@@ -48,8 +48,6 @@ public class StartCheckDialogFragment extends DialogFragment {
     private String selectedPhone;
     private String selectedName;
 
-    private boolean pendingSend = false;
-
     public static StartCheckDialogFragment newInstance(String contactName, String contactPhone) {
         StartCheckDialogFragment f = new StartCheckDialogFragment();
         Bundle b = new Bundle();
@@ -237,13 +235,13 @@ public class StartCheckDialogFragment extends DialogFragment {
             Log.e(TAG, "Could not load contacts", e);
         }
     }
+
     private boolean saveCheck(Check check) {
         try {
             ArrayList<Check> checks = FileHelper.loadChecks(requireContext());
             checks.add(check);
 
             if (FileHelper.saveChecks(requireContext(), checks)) {
-                Log.d(TAG, "Saved check: " + check.id);
                 return true;
             }
 
@@ -256,17 +254,11 @@ public class StartCheckDialogFragment extends DialogFragment {
 
     private void sendSms(String phone, String message) {
         if (requireContext().checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            pendingSend = true;
             requestPermissions(new String[]{Manifest.permission.SEND_SMS}, SMS_PERMISSION_REQUEST);
-//            pendingPhone = phone;
-//            pendingMessage = message;
             return;
         }
         doSend(phone, message);
     }
-
-    private String pendingPhone;
-    private String pendingMessage;
 
     private void doSend(String phone, String message) {
         if (!requireContext().getPackageManager()
@@ -289,7 +281,6 @@ public class StartCheckDialogFragment extends DialogFragment {
             }
 
             manager.sendTextMessage(phone, null, message, null, null);
-            Log.d(TAG, "SMS submitted to " + phone);
             Toast.makeText(requireContext(), "SMS submitted for sending", Toast.LENGTH_LONG).show();
 
         } catch (Exception e) {

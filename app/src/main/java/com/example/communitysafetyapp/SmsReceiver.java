@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.provider.Telephony;
 import android.telephony.SmsMessage;
 import android.util.Log;
+import android.content.Intent;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -39,9 +40,6 @@ public class SmsReceiver extends BroadcastReceiver {
         }
 
         String response = body.toString().trim().toUpperCase(Locale.ROOT);
-
-        Log.d(TAG, "Sender: " + sender);
-        Log.d(TAG, "Response: " + response);
 
         // Only accept OK or HELP responses for now (case-insensitive)
         // TODO: handle messages that are neither
@@ -89,15 +87,16 @@ public class SmsReceiver extends BroadcastReceiver {
         }
 
         if (!updated) {
-            Log.d(TAG, "No matching waiting check found");
             return;
         }
 
         // Save updated checks
         if (FileHelper.saveChecks(context, checks)) {
-            Log.d(TAG, "Check status updated successfully");
-        } else {
-            Log.e(TAG, "Could not save updated checks");
+            Intent updateIntent = new Intent(
+                    "com.example.communitysafetyapp.CHECK_UPDATED");
+
+            updateIntent.setPackage(context.getPackageName());
+            context.sendBroadcast(updateIntent);
         }
     }
 }
