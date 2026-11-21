@@ -3,44 +3,57 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="#eaeaea"
     android:minWidth="320dp"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:orientation="vertical">
 
     <TextView
         android:id="@+id/tvDialogTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#1F3A5F"
+        android:padding="24dp"
+        android:gravity="center"
         android:text="Start Welfare Check"
-        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvDialogContact"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="24dp"
         android:text="Checking on: ..."
-        android:textSize="14sp"
+        android:textSize="18sp"
         android:visibility="gone" />
 
     <Spinner
         android:id="@+id/spinnerContact"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="24dp"
         android:visibility="gone" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Reason" />
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:text="Reason"
+        android:textSize="18sp" />
 
     <RadioGroup
         android:id="@+id/rgReason"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="24dp"
         android:orientation="vertical">
 
         <RadioButton
@@ -48,31 +61,40 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Just checking in"
-            android:checked="true" />
+            android:checked="true"
+            android:textSize="18sp" />
 
         <RadioButton
             android:id="@+id/rbSafetyConcern"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Safety concern" />
+            android:text="Safety concern"
+            android:textSize="18sp" />
     </RadioGroup>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Response window" />
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:text="Response window"
+        android:textSize="18sp" />
 
     <Spinner
         android:id="@+id/spinnerWindow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp" />
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="24dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
         android:orientation="horizontal"
         android:gravity="end">
 
@@ -80,13 +102,17 @@
             android:id="@+id/btnCancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cancel" />
+            android:backgroundTint="#5F6B7A"
+            android:text="Cancel"
+            android:textSize="18sp" />
 
         <Button
             android:id="@+id/btnStart"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Start" />
+            android:backgroundTint="#1F3A5F                 "
+            android:text="Start"
+            android:textSize="18sp" />
     </LinearLayout>
 </LinearLayout>
