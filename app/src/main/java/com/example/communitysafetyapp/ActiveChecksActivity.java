@@ -1,9 +1,12 @@
-
 package com.example.communitysafetyapp;
 
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.telephony.SmsManager;
@@ -15,25 +18,38 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
 
 public class ActiveChecksActivity extends AppCompatActivity {
 
     private static final String TAG = "ActiveChecksActivity";
+    private static final String ACTION_CHECK_UPDATED = "com.example.communitysafetyapp.CHECK_UPDATED";
+    private final ArrayList<Check> checks = new ArrayList<>();
+    private final ArrayList<Check> displayedChecks = new ArrayList<>();
+    private boolean showingClosed = false;
+
     private ListView lvChecks;
     private TextView tvChecksEmpty;
     private Button btnStartCheck;
-
-    private ArrayList<Check> checks = new ArrayList<>();
     private ArrayAdapter<Check> adapter;
     private CountDownTimer countDownTimer;
+
+    // Reload the saved check-ins when SmsReceiver processes an incoming SMS.
+    private final BroadcastReceiver checkUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            refreshChecks();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +68,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
 
 
         // Use custom cards in the listView ie item_check xml layout
-        adapter = new ArrayAdapter<Check>(this, R.layout.item_check, checks) {
+        adapter = new ArrayAdapter<Check>(this, R.layout.item_check, displayedChecks) {
 
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
@@ -154,7 +170,31 @@ public class ActiveChecksActivity extends AppCompatActivity {
 
                 return convertView;
             }
+
+
         };
+
+        TabLayout tabChecks = findViewById(R.id.tabChecks);
+
+        tabChecks.addTab(tabChecks.newTab().setText("Open Checks"));
+        tabChecks.addTab(tabChecks.newTab().setText("Closed Checks"));
+
+        tabChecks.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                showingClosed = tab.getPosition() == 1;
+                updateCheckList();
+            }
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+
+        Button btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
 
         lvChecks.setAdapter(adapter);
 
@@ -162,12 +202,24 @@ public class ActiveChecksActivity extends AppCompatActivity {
     }
 
 
-    // Timer/Countdown functions
+    // Register while the activity is visible.
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        IntentFilter filter = new IntentFilter(ACTION_CHECK_UPDATED);
+        ContextCompat.registerReceiver(
+                this,
+                checkUpdateReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        loadChecks();
-        startTimer();
+        refreshChecks();
     }
 
     @Override
@@ -179,31 +231,60 @@ public class ActiveChecksActivity extends AppCompatActivity {
         super.onPause();
     }
 
+    @Override
+    protected void onStop() {
+        unregisterReceiver(checkUpdateReceiver);
+        super.onStop();
+    }
+
+    // Reload check-ins after creating one or receiving an SMS update.
+    public void refreshChecks() {
+        loadChecks();
+        startTimer();
+    }
+
     private void loadChecks() {
         try {
             ArrayList<Check> loadedChecks = FileHelper.loadChecks(this);
             checks.clear();
             checks.addAll(loadedChecks);
-
-            Log.d(TAG, "Loaded " + checks.size() + " checks");
-
         } catch (Exception e) {
             Log.e(TAG, "Could not load checks", e);
             return;
         }
 
-        adapter.notifyDataSetChanged();
-
-        // Check for existing check-ins (active and closed)
-        if (checks.isEmpty()) {
-            tvChecksEmpty.setVisibility(View.VISIBLE);
-            lvChecks.setVisibility(View.GONE);
-        } else {
-            tvChecksEmpty.setVisibility(View.GONE);
-            lvChecks.setVisibility(View.VISIBLE);
-        }
+        updateCheckList();
     }
 
+
+    private void updateCheckList() {
+        displayedChecks.clear();
+
+        for (Check check : checks) {
+            boolean isClosed = Check.STATUS_CLOSED.equals(check.status);
+
+            if (isClosed == showingClosed) {
+                displayedChecks.add(check);
+            }
+        }
+
+        adapter.notifyDataSetChanged();
+
+        if (displayedChecks.isEmpty()) {
+            lvChecks.setVisibility(View.GONE);
+            tvChecksEmpty.setVisibility(View.VISIBLE);
+
+            if (showingClosed) {
+                tvChecksEmpty.setText("No closed check-ins");
+            } else {
+                tvChecksEmpty.setText("No open check-ins");
+            }
+
+        } else {
+            lvChecks.setVisibility(View.VISIBLE);
+            tvChecksEmpty.setVisibility(View.GONE);
+        }
+    }
 
     // Use a single CountDownTimer for each check's countdown, if multiple are active
     // longestRemaining is the check with the longest timer, and is how long the shared timer runs
@@ -368,12 +449,6 @@ public class ActiveChecksActivity extends AppCompatActivity {
         }
     }
 
-    // Used to display the checks when one is created
-    public void refreshChecks() {
-        loadChecks();
-        startTimer();
-    }
-
     // Update the checks file - resending updates the same check record
     private void saveChecks() {
 
@@ -381,4 +456,5 @@ public class ActiveChecksActivity extends AppCompatActivity {
             Log.e(TAG, "Could not save checks");
         }
     }
+
 }

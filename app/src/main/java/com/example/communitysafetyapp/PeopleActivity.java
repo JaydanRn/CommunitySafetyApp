@@ -25,7 +25,6 @@ import java.util.ArrayList;
 public class PeopleActivity extends AppCompatActivity {
 
     private static final String TAG = "PeopleActivity";
-
     private TextView tvEscalationContact, tvContactsEmpty;
     private EditText etMyNumber;
     private Button btnPickEscalation, btnSaveYou;
@@ -85,6 +84,10 @@ public class PeopleActivity extends AppCompatActivity {
             StartCheckDialogFragment.newInstance().show(getSupportFragmentManager(), "startCheck");
             return true;
         });
+
+        Button btnBack = findViewById(R.id.btnBack);
+
+        btnBack.setOnClickListener(v -> finish());
     }
 
     @Override
@@ -97,7 +100,6 @@ public class PeopleActivity extends AppCompatActivity {
     private void loadSettings() {
         try {
             settings = FileHelper.loadSettings(this);
-            Log.d(TAG, "Settings loaded: " + settings.myNumber);
 
         } catch (Exception e) {
             Log.e(TAG, "Could not load settings", e);
@@ -117,16 +119,8 @@ public class PeopleActivity extends AppCompatActivity {
     private void loadContacts() {
         try {
             ArrayList<Contact> loadedContacts = FileHelper.loadContacts(this);
-
-            for (Contact c : contacts) {
-                Log.d("FileDebug", "Contact: " + c.name + " | " + c.phone);
-            }
-
             contacts.clear();
             contacts.addAll(loadedContacts);
-
-            Log.d(TAG, "Loaded " + contacts.size() + " contacts");
-
         } catch (Exception e) {
             Log.e(TAG, "Could not load contacts", e);
             Toast.makeText(this, "Could not load contacts", Toast.LENGTH_LONG).show();
@@ -147,7 +141,6 @@ public class PeopleActivity extends AppCompatActivity {
 
     private boolean saveSettings() {
         if (FileHelper.saveSettings(this, settings)) {
-            Log.d(TAG, "Settings saved");
             return true;
         } else {
             Log.e(TAG, "Could not save settings");
