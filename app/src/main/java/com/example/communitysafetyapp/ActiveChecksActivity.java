@@ -33,8 +33,12 @@ public class ActiveChecksActivity extends AppCompatActivity {
 
     private static final String TAG = "ActiveChecksActivity";
     private static final String ACTION_CHECK_UPDATED = "com.example.communitysafetyapp.CHECK_UPDATED";
+
+    //holds every check-in, displayChecks only holds the one on the current tab
     private final ArrayList<Check> checks = new ArrayList<>();
     private final ArrayList<Check> displayedChecks = new ArrayList<>();
+
+    //Checks whether the Checks tab is opened or closed
     private boolean showingClosed = false;
 
     private ListView lvChecks;
@@ -77,6 +81,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
                     convertView = getLayoutInflater().inflate(R.layout.item_check, parent, false);
                 }
 
+                //Fill this card with the details of on check-in
                 Check check = getItem(position);
 
                 TextView tvName = convertView.findViewById(R.id.tvCheckName);
@@ -174,6 +179,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
 
         };
 
+        //Two tabs that Open Checks and Closed Checks
         TabLayout tabChecks = findViewById(R.id.tabChecks);
 
         tabChecks.addTab(tabChecks.newTab().setText("Open Checks"));
@@ -182,6 +188,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
         tabChecks.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+                //switch the list to the selected tab
                 showingClosed = tab.getPosition() == 1;
                 updateCheckList();
             }
@@ -193,11 +200,13 @@ public class ActiveChecksActivity extends AppCompatActivity {
             }
         });
 
+        //Back button that closes this screen
         Button btnBack = findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> finish());
 
         lvChecks.setAdapter(adapter);
 
+        //opens the pop-up form
         btnStartCheck.setOnClickListener(v -> StartCheckDialogFragment.newInstance().show(getSupportFragmentManager(), "startCheck"));
     }
 
@@ -216,12 +225,14 @@ public class ActiveChecksActivity extends AppCompatActivity {
         );
     }
 
+    //reload the check-ins everytime the screen pops up
     @Override
     protected void onResume() {
         super.onResume();
         refreshChecks();
     }
 
+    //stops the countdown when the screen is hidden
     @Override
     protected void onPause() {
         if (countDownTimer != null) {
@@ -231,6 +242,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
         super.onPause();
     }
 
+    //stop listening for updates
     @Override
     protected void onStop() {
         unregisterReceiver(checkUpdateReceiver);
@@ -243,6 +255,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
         startTimer();
     }
 
+    //read saved check-ins and updates the list
     private void loadChecks() {
         try {
             ArrayList<Check> loadedChecks = FileHelper.loadChecks(this);
@@ -257,6 +270,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
     }
 
 
+    //Shows the open or closed checks-ins based on the tab
     private void updateCheckList() {
         displayedChecks.clear();
 
@@ -270,6 +284,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
 
         adapter.notifyDataSetChanged();
 
+        //no check-ins messages
         if (displayedChecks.isEmpty()) {
             lvChecks.setVisibility(View.GONE);
             tvChecksEmpty.setVisibility(View.VISIBLE);
@@ -312,6 +327,7 @@ public class ActiveChecksActivity extends AppCompatActivity {
             return;
         }
 
+        //Countdown update
         countDownTimer = new CountDownTimer(longestRemaining, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {

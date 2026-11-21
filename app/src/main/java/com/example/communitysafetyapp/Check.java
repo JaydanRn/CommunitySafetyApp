@@ -21,11 +21,14 @@ public class Check implements Serializable {
     public long closedTime;
     public long deadline;
     public String status;
+    //Boolean to check if the reply came after the deadline
     public boolean lateResponse = false;
+    //Log events for check-in
     public ArrayList<String> timeline = new ArrayList<>();
 
     public Check(){}
 
+    //check if the check-in is still open
     public boolean isActive(){
         return (STATUS_WAITING.equals(status) || STATUS_ESCALATED_PHYSICAL.equals(status) || STATUS_ESCALATED_EMERGENCY.equals(status));
     }

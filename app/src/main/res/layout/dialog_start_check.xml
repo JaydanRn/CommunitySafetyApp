@@ -16,8 +16,7 @@
         android:gravity="center"
         android:text="Start Welfare Check"
         android:textColor="#FFFFFF"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:textSize="24sp" />
 
     <TextView
         android:id="@+id/tvDialogContact"
@@ -111,7 +110,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:backgroundTint="#1F3A5F                 "
+            android:backgroundTint="#1F3A5F"
             android:text="Start"
             android:textSize="18sp" />
     </LinearLayout>

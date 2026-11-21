@@ -28,7 +28,9 @@ public class ItemContactActivity extends AppCompatActivity {
     private Spinner spinnerGroup;
     private Button btnSave, btnCancel;
     private Button btnDelete;
+    //boolean to detect when editing an existing contact
     private boolean isEditMode = false;
+    //Phone number of the contact being edited
     private String originalPhone = null;
 
     @Override
@@ -50,6 +52,7 @@ public class ItemContactActivity extends AppCompatActivity {
         btnCancel    = findViewById(R.id.btnCancel);
         btnDelete    = findViewById(R.id.btnDelete);
 
+        //Fill the group spinner from the contact_groups list
         ArrayAdapter<CharSequence> groupAdapter = ArrayAdapter.createFromResource(
                 this,
                 R.array.contact_groups,
@@ -58,6 +61,7 @@ public class ItemContactActivity extends AppCompatActivity {
         groupAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerGroup.setAdapter(groupAdapter);
 
+        //Edit contact mode which shows the form and Delete button
         String nameExtra = getIntent().getStringExtra("name");
         if (nameExtra != null) {
             isEditMode = true;
@@ -76,8 +80,11 @@ public class ItemContactActivity extends AppCompatActivity {
             }
         }
 
+        //Save, Cancel and Delete buttons
         btnSave.setOnClickListener(v -> saveContact());
         btnCancel.setOnClickListener(v -> finish());
+
+        //Asks for confirmation from the user before deleting
         btnDelete.setOnClickListener(v -> {
             new AlertDialog.Builder(this)
                     .setTitle("Delete Contact")
@@ -87,12 +94,14 @@ public class ItemContactActivity extends AppCompatActivity {
                     .show();
         });
 
+        //back button
         Button btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
     }
 
 
+    //Checks the form, then updates the contact in the list
     private void saveContact() {
         String name = "";
         if (etName.getText() != null) {
@@ -106,6 +115,7 @@ public class ItemContactActivity extends AppCompatActivity {
 
         String group = spinnerGroup.getSelectedItem().toString();
 
+        //Validation for a name and phone required and number need to be 7 or more characters
         if (name.isEmpty()) {
             etName.setError("Name required");
             return;
@@ -115,6 +125,7 @@ public class ItemContactActivity extends AppCompatActivity {
             return;
         }
 
+        //Load the saved contacts
         ArrayList<Contact> contacts;
 
         try {
@@ -141,6 +152,7 @@ public class ItemContactActivity extends AppCompatActivity {
             }
         }
 
+        //Updates the existing contact, otherwise a new contact is added
         if (isEditMode) {
             boolean found = false;
             for (int i = 0; i < contacts.size(); i++) {
@@ -169,6 +181,8 @@ public class ItemContactActivity extends AppCompatActivity {
             Toast.makeText(this, "Save failed", Toast.LENGTH_LONG).show();
         }
     }
+
+    //Deletes the contact that matches the original phone number and saves
     private void deleteContact() {
         try {
             ArrayList<Contact> contacts = FileHelper.loadContacts(this);

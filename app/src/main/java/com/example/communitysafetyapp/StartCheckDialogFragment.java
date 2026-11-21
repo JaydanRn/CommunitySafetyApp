@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
+//check-in popup form to choose a contact, a reason and reply time
 public class StartCheckDialogFragment extends DialogFragment {
 
     private static final String TAG = "StartCheckDialog";
@@ -48,6 +49,7 @@ public class StartCheckDialogFragment extends DialogFragment {
     private String selectedPhone;
     private String selectedName;
 
+    //opens the pop-up for a specific contact
     public static StartCheckDialogFragment newInstance(String contactName, String contactPhone) {
         StartCheckDialogFragment f = new StartCheckDialogFragment();
         Bundle b = new Bundle();
@@ -61,6 +63,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         return new StartCheckDialogFragment();
     }
 
+    //loads the popup layout
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -80,9 +83,12 @@ public class StartCheckDialogFragment extends DialogFragment {
         btnStart         = view.findViewById(R.id.btnStart);
         btnCancel        = view.findViewById(R.id.btnCancel);
 
+
+        //Load the saved setting and contacts
         loadSettings();
         loadContacts();
 
+        //Fill the reply-time spinner from the check_windows list
         ArrayAdapter<CharSequence> windowAdapter = ArrayAdapter.createFromResource(
                 requireContext(),
                 R.array.check_windows,
@@ -91,6 +97,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         windowAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerWindow.setAdapter(windowAdapter);
 
+        //A contact was passed in, so it would show their name instead of the contact list
         if (getArguments() != null && getArguments().getString(ARG_CONTACT_PHONE) != null) {
             selectedPhone = getArguments().getString(ARG_CONTACT_PHONE);
             selectedName  = getArguments().getString(ARG_CONTACT_NAME);
@@ -99,6 +106,7 @@ public class StartCheckDialogFragment extends DialogFragment {
             tvDialogContact.setVisibility(View.VISIBLE);
             spinnerContact.setVisibility(View.GONE);
         } else {
+            //there are no contacts
             if (contacts.isEmpty()) {
                 Toast.makeText(requireContext(),
                         "No contacts yet - add one on the People screen",
@@ -107,6 +115,7 @@ public class StartCheckDialogFragment extends DialogFragment {
                 return;
             }
 
+            //list of contacts for the spinner
             String[] names = new String[contacts.size()];
             for (int i = 0; i < contacts.size(); i++) {
                 names[i] = contacts.get(i).name + " (" + contacts.get(i).phone + ")";
@@ -121,10 +130,13 @@ public class StartCheckDialogFragment extends DialogFragment {
             spinnerContact.setVisibility(View.VISIBLE);
         }
 
+        //Begins the check-in
         btnStart.setOnClickListener(v -> onStartClicked());
+        //closes the pop-up
         btnCancel.setOnClickListener(v -> dismiss());
     }
 
+    //Gets SMS permissions, saves the check and sends the SMS
     private void onStartClicked() {
         if (requireContext().checkSelfPermission(Manifest.permission.SEND_SMS)
                 != PackageManager.PERMISSION_GRANTED
@@ -141,6 +153,7 @@ public class StartCheckDialogFragment extends DialogFragment {
             );
             return;
         }
+        //No contact was passed in, so uses the one picked in the spinner
         if (selectedPhone == null) {
             int pos = spinnerContact.getSelectedItemPosition();
             if (pos < 0 || pos >= contacts.size()) {
@@ -151,6 +164,7 @@ public class StartCheckDialogFragment extends DialogFragment {
             selectedName  = contacts.get(pos).name;
         }
 
+        //chooses the reason from the radio button
         String reason = "";
         if (rbSafetyConcern.isChecked()) {
             reason = "SAFETY_CONCERN";
@@ -174,6 +188,7 @@ public class StartCheckDialogFragment extends DialogFragment {
             return;
         }
 
+        //create the check-in with its start time and deadline
         int windowMinutes = parseWindowMinutes(spinnerWindow.getSelectedItem().toString());
 
         Check check = new Check();
@@ -191,6 +206,7 @@ public class StartCheckDialogFragment extends DialogFragment {
             return;
         }
 
+        //send the SMS to the contact
         String msg = buildMessage(check);
         sendSms(selectedPhone, msg);
 
@@ -203,6 +219,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         dismiss();
     }
 
+    //Build the SMS text, using your phone number or "Someone" if none is saved
     private String buildMessage(Check check) {
         String sender = "";
         if (settings.myNumber.isEmpty()) {
@@ -214,6 +231,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         return "Hi " + check.contactName + ", " + sender + " is checking in on you. Reply OK if you're fine, or HELP if you need assistance.";
     }
 
+    // Reads the saved settings
     private void loadSettings() {
         try {
             settings = FileHelper.loadSettings(requireContext());
@@ -224,6 +242,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         }
     }
 
+    //reads the saved contacts for the spinner
     private void loadContacts() {
         try {
             ArrayList<Contact> loadedContacts = FileHelper.loadContacts(requireContext());
@@ -236,6 +255,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         }
     }
 
+    //Adds the new check-in to the saved list
     private boolean saveCheck(Check check) {
         try {
             ArrayList<Check> checks = FileHelper.loadChecks(requireContext());
@@ -252,6 +272,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         return false;
     }
 
+    //Sends SMS if the permission is granted, ask for permission if not
     private void sendSms(String phone, String message) {
         if (requireContext().checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.SEND_SMS}, SMS_PERMISSION_REQUEST);
@@ -260,6 +281,7 @@ public class StartCheckDialogFragment extends DialogFragment {
         doSend(phone, message);
     }
 
+    //Sends the SMS and shows the Result
     private void doSend(String phone, String message) {
         if (!requireContext().getPackageManager()
                 .hasSystemFeature(PackageManager.FEATURE_TELEPHONY_MESSAGING)) {
@@ -306,10 +328,12 @@ public class StartCheckDialogFragment extends DialogFragment {
         }
     }
 
+    //returns the current time in "HH:mm" for the check-in log
     private static String timeNow() {
         return new SimpleDateFormat("HH:mm", Locale.US).format(new Date());
     }
 
+    //Pulls the number out of text and used 1 if that fails
     private static int parseWindowMinutes(String label) {
         try {
             return Integer.parseInt(label.replaceAll("[^0-9]", ""));

@@ -39,6 +39,7 @@ public class SmsReceiver extends BroadcastReceiver {
             body.append(sms.getDisplayMessageBody());
         }
 
+        //Make the reply upper case
         String response = body.toString().trim().toUpperCase(Locale.ROOT);
 
         // Only accept OK or HELP responses for now (case-insensitive)
@@ -47,6 +48,7 @@ public class SmsReceiver extends BroadcastReceiver {
             return;
         }
 
+        //Load the saved check-ins
         ArrayList<Check> checks;
 
         try {
@@ -56,6 +58,7 @@ public class SmsReceiver extends BroadcastReceiver {
             return;
         }
 
+        //Find the waiting check and record their reply
         boolean updated = false;
 
         for (Check check : checks) {
@@ -66,8 +69,10 @@ public class SmsReceiver extends BroadcastReceiver {
 
                 long responseTime = System.currentTimeMillis();
 
+                //Mark the reply as late
                 check.lateResponse = responseTime > check.deadline;
 
+                //checks the message to see if safe or help is needed
                 if (response.equals("OK")) {
                     check.status = Check.STATUS_RESOLVED_OK;
 

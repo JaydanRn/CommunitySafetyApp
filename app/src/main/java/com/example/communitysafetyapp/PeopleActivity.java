@@ -54,12 +54,16 @@ public class PeopleActivity extends AppCompatActivity {
         tvContactsEmpty     = findViewById(R.id.tvContactsEmpty);
         fabAddContact       = findViewById(R.id.fabAddContact);
 
+        //Shows the contacts in a list
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, contacts);
         lvContacts.setAdapter(adapter);
 
+
+        //Save your number and chooses the escalation contact
         btnSaveYou.setOnClickListener(v -> saveYou());
         btnPickEscalation.setOnClickListener(v -> pickEscalationContact());
 
+        //Plus button opens the form to fill out to add a new contact
         fabAddContact.setOnClickListener(v -> {
             Intent i = new Intent(
                     PeopleActivity.this,
@@ -68,6 +72,7 @@ public class PeopleActivity extends AppCompatActivity {
             startActivity(i);
         });
 
+        // Tapping an added contact opens an edit mode with it details
         lvContacts.setOnItemClickListener((parent, view, position, id) -> {
             Contact c = contacts.get(position);
             Intent i = new Intent(
@@ -80,16 +85,20 @@ public class PeopleActivity extends AppCompatActivity {
             startActivity(i);
         });
 
+        //Long pressing on the plus button starts a check-in
         fabAddContact.setOnLongClickListener(v -> {
             StartCheckDialogFragment.newInstance().show(getSupportFragmentManager(), "startCheck");
             return true;
         });
 
+        //Back button closes the screen
         Button btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
     }
 
+
+    //Reloads settings and contacts
     @Override
     protected void onResume() {
         super.onResume();
@@ -97,6 +106,7 @@ public class PeopleActivity extends AppCompatActivity {
         loadContacts();
     }
 
+    //Reads the saved settings then shows your contact and escalation contact
     private void loadSettings() {
         try {
             settings = FileHelper.loadSettings(this);
@@ -116,6 +126,7 @@ public class PeopleActivity extends AppCompatActivity {
         }
     }
 
+    //Reads the saved contacts and shows the list, or if it is empty
     private void loadContacts() {
         try {
             ArrayList<Contact> loadedContacts = FileHelper.loadContacts(this);
@@ -139,6 +150,7 @@ public class PeopleActivity extends AppCompatActivity {
 
     }
 
+    //Writes the settings to the file and report failures
     private boolean saveSettings() {
         if (FileHelper.saveSettings(this, settings)) {
             return true;
@@ -149,6 +161,7 @@ public class PeopleActivity extends AppCompatActivity {
         }
     }
 
+    //saves your phone number
     private void saveYou() {
         String num = "";
         if (etMyNumber.getText() != null) {
@@ -165,6 +178,7 @@ public class PeopleActivity extends AppCompatActivity {
         }
     }
 
+    //shows a list of contacts to choose who to alert when help is needed
     private void pickEscalationContact() {
         if (contacts.isEmpty()) {
             Toast.makeText(this, "Add a contact first", Toast.LENGTH_SHORT).show();
