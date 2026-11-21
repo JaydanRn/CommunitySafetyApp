@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#FFFFFF"
+    android:background="@color/white"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -10,7 +10,7 @@
         android:id="@+id/tvCheckName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#D6DEE9"
+        android:background="@color/header_background"
         android:gravity="center"
         android:padding="12dp"
         android:text="Contact Name"
@@ -47,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="#5F6B7A"
+            android:textColor="@color/secondary"
             android:textSize="18sp" />
 
         <TextView
@@ -55,7 +55,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="#5F6B7A"
+            android:textColor="@color/secondary"
             android:textSize="18sp"
             android:visibility="gone" />
 
@@ -66,14 +66,14 @@
             android:layout_marginTop="8dp"
             android:text="Time: 05:00 remaining"
             android:textSize="18sp"
-            android:textColor="#5F6B7A" />
+            android:textColor="@color/secondary" />
 
         <Button
             android:id="@+id/btnResend"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:backgroundTint="#1F3A5F"
+            android:backgroundTint="@color/primary"
             android:text="Resend Check-In"
             android:textSize="18sp"
             android:visibility="gone" />
@@ -83,7 +83,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:backgroundTint="#5F6B7A"
+            android:backgroundTint="@color/secondary"
             android:text="Close Check-In"
             android:textSize="18sp"
             android:visibility="gone" />

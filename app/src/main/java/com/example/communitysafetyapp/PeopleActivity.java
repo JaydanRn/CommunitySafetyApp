@@ -12,7 +12,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -25,9 +24,9 @@ import java.util.ArrayList;
 public class PeopleActivity extends AppCompatActivity {
 
     private static final String TAG = "PeopleActivity";
-    private TextView tvEscalationContact, tvContactsEmpty;
+    private TextView tvContactsEmpty;
     private EditText etMyNumber;
-    private Button btnPickEscalation, btnSaveYou;
+    private Button btnSaveYou;
     private ListView lvContacts;
     private FloatingActionButton fabAddContact;
 
@@ -47,8 +46,6 @@ public class PeopleActivity extends AppCompatActivity {
         });
 
         etMyNumber          = findViewById(R.id.etMyNumber);
-        tvEscalationContact = findViewById(R.id.tvEscalationContact);
-        btnPickEscalation   = findViewById(R.id.btnPickEscalation);
         btnSaveYou          = findViewById(R.id.btnSaveYou);
         lvContacts          = findViewById(R.id.lvContacts);
         tvContactsEmpty     = findViewById(R.id.tvContactsEmpty);
@@ -59,9 +56,8 @@ public class PeopleActivity extends AppCompatActivity {
         lvContacts.setAdapter(adapter);
 
 
-        //Save your number and chooses the escalation contact
+        //Save your number
         btnSaveYou.setOnClickListener(v -> saveYou());
-        btnPickEscalation.setOnClickListener(v -> pickEscalationContact());
 
         //Plus button opens the form to fill out to add a new contact
         fabAddContact.setOnClickListener(v -> {
@@ -106,7 +102,7 @@ public class PeopleActivity extends AppCompatActivity {
         loadContacts();
     }
 
-    //Reads the saved settings then shows your contact and escalation contact
+    //Reads the saved settings then shows your contact
     private void loadSettings() {
         try {
             settings = FileHelper.loadSettings(this);
@@ -118,12 +114,6 @@ public class PeopleActivity extends AppCompatActivity {
         }
 
         etMyNumber.setText(settings.myNumber);
-        if (settings.escalationContactPhone.isEmpty()) {
-            tvEscalationContact.setText("Escalation Contact: none");
-        } else {
-            tvEscalationContact.setText("Escalation Contact: " + settings.escalationContactName
-                    + " (" + settings.escalationContactPhone + ")");
-        }
     }
 
     //Reads the saved contacts and shows the list, or if it is empty
@@ -176,31 +166,5 @@ public class PeopleActivity extends AppCompatActivity {
         if (saveSettings()) {
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    //shows a list of contacts to choose who to alert when help is needed
-    private void pickEscalationContact() {
-        if (contacts.isEmpty()) {
-            Toast.makeText(this, "Add a contact first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String[] names = new String[contacts.size()];
-        for (int i = 0; i < contacts.size(); i++) {
-            names[i] = contacts.get(i).name + " (" + contacts.get(i).phone + ")";
-        }
-
-        new AlertDialog.Builder(this)
-                .setTitle("Choose escalation contact")
-                .setItems(names, (dialog, which) -> {
-                    Contact c = contacts.get(which);
-                    settings.escalationContactName = c.name;
-                    settings.escalationContactPhone = c.phone;
-                    if (saveSettings()) {
-                        tvEscalationContact.setText("Escalation Contact: " + c.name + " (" + c.phone + ")");
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 }

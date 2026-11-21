@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.provider.Telephony;
 import android.telephony.SmsMessage;
 import android.util.Log;
-import android.content.Intent;
 
 import java.util.ArrayList;
 import java.util.Locale;

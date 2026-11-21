@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#eaeaea"
+    android:background="@color/background"
     android:minWidth="320dp"
     android:orientation="vertical">
 
@@ -11,11 +11,11 @@
         android:id="@+id/tvDialogTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#1F3A5F"
+        android:background="@color/primary"
         android:padding="24dp"
         android:gravity="center"
         android:text="Start Welfare Check"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/white"
         android:textSize="24sp" />
 
     <TextView
@@ -101,7 +101,7 @@
             android:id="@+id/btnCancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="#5F6B7A"
+            android:backgroundTint="@color/secondary"
             android:text="Cancel"
             android:textSize="18sp" />
 
@@ -110,7 +110,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:backgroundTint="#1F3A5F"
+            android:backgroundTint="@color/primary"
             android:text="Start"
             android:textSize="18sp" />
     </LinearLayout>
