@@ -379,7 +379,6 @@ public class ActiveChecksActivity extends AppCompatActivity {
         }
 
         // Reuse the original response window selected by the user
-        // Todo: let them change the window
         long duration = check.deadline - check.startTime;
 
         if (duration <= 0) {

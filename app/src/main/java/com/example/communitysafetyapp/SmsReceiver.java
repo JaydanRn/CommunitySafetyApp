@@ -42,7 +42,6 @@ public class SmsReceiver extends BroadcastReceiver {
         String response = body.toString().trim().toUpperCase(Locale.ROOT);
 
         // Only accept OK or HELP responses for now (case-insensitive)
-        // TODO: handle messages that are neither
         if (!response.equals("OK") && !response.equals("HELP")) {
             return;
         }
